@@ -1,12 +1,13 @@
-import os
+import json
 import requests
 from flask import Flask, request, jsonify
+from wrm import context_path
 
 app = Flask(__name__)
 
 def post_comment_to_jira(params, verbose=False):
     # Define your JIRA API URL
-    jira_api_url = f"{params['jira_url']}/rest/api/3/issue/{params['issue_number']}/comments"
+    jira_api_url = f"{params['jira_url']}/{context_path()}/rest/api/3/issue/{params['issue_number']}/comment"
 
     # Define your comment text
     comment_text = params['comment']
@@ -20,7 +21,13 @@ def post_comment_to_jira(params, verbose=False):
     payload_json = json.dumps(payload)
 
     # Send the API request to post the comment
-    response = requests.post(jira_api_url, data=payload_json, auth=(params['username'], params['api_token']), headers={"Content-Type": "application/json"})
+    response = requests.post(
+        jira_api_url,
+        data=payload_json,
+        auth=request.auth,
+        headers={"Content-Type": "application/json"},
+        verify=False  # skip SSL certificate verification
+    )
 
     # Check the response status code
     if response.status_code == 201:
@@ -40,20 +47,27 @@ def handle_post_comment_to_jira():
     username = request.form['username']
     api_token = request.form['api_token']
 
+    # Set the authentication credentials for the request
+    request.auth = (username, api_token)
+
     # Call the post_comment_to_jira function
     post_comment_to_jira(
         params={
             'comment': comment,
             'issue_number': issue_number,
-            'jira_url': jira_url,
-            'username': username,
-            'api_token': api_token
+            'jira_url': jira_url
         },
         verbose=True
     )
 
     # Return a success response
     return jsonify({"success": True})
+
+@app.route('/')
+def index():
+    comment = request.args.get('comment', '')
+    issue_number = request.args.get('issue_number', '')
+    jira_url = request.args.get('jira_url', '')
 
 @app.route('/')
 def index():
