@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-php-app
+spec:
+  selector:
+    matchLabels:
+      app: my-php-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-php-app
+    spec:
+      containers:
+      - name: my-php-app
+        image: my-php-app
+        ports:
+        - containerPort: 80
+        env:
+        - name: JIRA_URL
+          value: <your JIRA URL>
+        - name: JIRA_USERNAME
+          value: <your JIRA username>
+        - name: JIRA_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: jira-token-secret
+              key: api_token
+        - name: APACHE_PORT
+          value: "80"
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: my-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-php-app
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  selector:
+    app: my-php-app
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: my-php-app
+spec:
+  host: jira-comment.shard-a.ocp4-rnd.xxx
+  to:
+    kind: Service
+    name: my-php-app
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge

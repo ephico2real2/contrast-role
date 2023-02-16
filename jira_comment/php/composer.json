@@ -1,0 +1,5 @@
+{
+    "require": {
+        "unirest/unirest": "^3.0"
+    }
+}
