@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JIRA Comment Poster</title>
+  </head>
+  <body>
+    <h1>JIRA Comment Poster</h1>
+
+    <form method="POST" action="app.php">
+      <label for="jira-url">JIRA URL:</label>
+      <input type="url" name="jira-url" required><br><br>
+
+      <label for="jira-token">JIRA Token:</label>
+      <input type="password" name="jira-token" required><br><br>
+
+      <label for="issue-number">Issue Number:</label>
+      <input type="text" name="issue-number" required><br><br>
+
+      <label for="comment">Comment:</label><br>
+      <textarea name="comment" rows="5" cols="40" required></textarea><br><br>
+
+      <input type="checkbox" name="lookup-issue" value="true" id="lookup-issue">
+      <label for="lookup-issue">Lookup Issue</label><br><br>
+
+      <button type="submit">Post Comment</button>
+    </form>
+
+    <script>
+      const lookupCheckbox = document.querySelector('input[name="lookup-issue"]');
+      const issueNumberInput = document.querySelector('input[name="issue-number"]');
+      const issueSummaryField = document.createElement('p');
+      issueSummaryField.style.fontWeight = 'bold';
+      issueNumberInput.parentNode.insertBefore(issueSummaryField, issueNumberInput.nextSibling);
+      lookupCheckbox.addEventListener('change', () => {
+        if (lookupCheckbox.checked) {
+          fetch('app.php?issue-number=' + issueNumberInput.value, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.error) {
+                issueSummaryField.textContent = 'Error retrieving issue summary.';
+              } else {
+                issueSummaryField.textContent = 'Issue Summary: ' + data.summary;
+              }
+            });
+        } else {
+          issueSummaryField.textContent = '';
+        }
+      });
+    </script>
+  </body>
+</html>
